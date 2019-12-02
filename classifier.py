@@ -1,3 +1,5 @@
+import time 
+
 def loadTrainingData():
 	#load face training images into array 
 	f = open("data/facedata/facedatatrain")
@@ -88,7 +90,8 @@ def loadTestingData():
 
 	return faceTestingImages, faceTestingLabels, digitTestingImages, digitTestingLabels
 
-def trainPerceptron(images, labels, trainingSize):
+def trainFacePerceptron(images, labels, trainingSize):
+	start = time.time()
 	weights = [0] * ((len(images[0]) * len(images[0][0])))
 	bias = 0
 	end = int((float(trainingSize/100.0))*len(images))
@@ -104,7 +107,39 @@ def trainPerceptron(images, labels, trainingSize):
 			elif (val < 0 and (labels[images.index(image)]) == '1'): 
 				weights,bias = updateWeights(image, weights, bias, 1)
 				wchange=True
-	return weights, bias
+	end = time.time()
+	runtime = end - start
+	return weights, bias, runtime 
+
+def trainDigitPerceptron(images, labels, trainingSize):
+	start = time.time()
+	weights = []
+	i = 0
+	#Initiliaze weight sets
+	while(i < 10):
+		tempArray = [0] * ((len(images[0]) * len(images[0][0])))
+		weights.append(tempArray)
+		i += 1
+	#Initialize bias set
+	biasSet = [0] * 10
+	end = int((float(trainingSize/100.0))*len(images))
+	wchange = True
+	while wchange:
+		wchange = False 
+		for image in images[0:end]:
+			vals = [0] * 10
+			#Run on all 10 digit perceptrons 
+			j = 0
+			while(j < 10):
+				vals[j] = trainOnImage(image, weights[j], biasSet[j])
+				j += 1
+			if (str(vals.index(max(vals))) != labels[images.index(image)]):
+				#Update weights
+				updateWeights(image, weights[vals.index(max(vals))], biasSet[vals.index(max(vals))],-1)
+				updateWeights(image, weights[int(labels[images.index(image)])], biasSet[int(labels[images.index(image)])], 1)
+	end = time.time()
+	runtime = end - start
+	return weights, biasSet, runtime
 
 def updateWeights(image, weights, bias, change):
 	if(change > 0): #Increase weights
@@ -138,30 +173,50 @@ def trainOnImage(image, weights, bias):
 			k += 1
 	return fValue
 
-def testPerceptron(images, weights, bias, labels, trainingSize):
+def testFacePerceptron(images, weights, bias, labels, trainingSize, runtime):
 	correct = 0
 	incorrect = 0
 	for image in images:
 		val = trainOnImage(image, weights, bias)
 		if(val >= 0):
 			if(labels[images.index(image)] == '1'):
-				print("correct prediction")
 				correct += 1
 			else:
-				print("incorrect prediction")
 				incorrect += 1
 		else: 
 			if(labels[images.index(image)] == '0'):
-				print("correct prediction")
 				correct += 1
 			else:
-				print("incorrect prediction")
 				incorrect += 1
 	percentCorrect = float(correct/float(correct+incorrect))*100
 	percentIncorrect = float(incorrect/float(correct+incorrect))*100
-
+	print("Training Set Size: " + str(trainingSize) + "%")
+	print("Runtime: " + str(runtime))
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
+
+
+def testDigitPerceptron(images, weights, biases, labels, trainingSize, runtime):
+	correct = 0
+	incorrect = 0
+	for image in images:
+		vals = [0] * 10
+		#Run on all 10 digit perceptrons 
+		j = 0
+		while(j < 10):
+			vals[j] = trainOnImage(image, weights[j], biases[j])
+			j += 1
+		if (str(vals.index(max(vals))) != labels[images.index(image)]):
+			incorrect += 1
+		else: 
+			correct += 1
+	percentCorrect = float(correct/float(correct+incorrect))*100
+	percentIncorrect = float(incorrect/float(correct+incorrect))*100
+	print("Training Set Size: " + str(trainingSize) + "%")
+	print("Runtime: " + str(runtime))
+	print("Correct: " + str(percentCorrect) + "%")
+	print("Incorrect: " + str(percentIncorrect) + "%")
+
 
 
 if __name__ == "__main__":
@@ -196,11 +251,12 @@ if __name__ == "__main__":
 
 	if(dataType == 'f'):
 		if(classifier == 'p'):
-			weights, bias = trainPerceptron(fImages, fLabels, trainingSize)
-			testPerceptron(fTestImages, weights, bias, fTestLabels, trainingSize)
+			weights, bias, runtime = trainFacePerceptron(fImages, fLabels, trainingSize)
+			testFacePerceptron(fTestImages, weights, bias, fTestLabels, trainingSize, runtime)
 	elif(dataType == 'd'):
 		if(classifier == 'p'):
-			print("running Perceptron on digits")
+			weights, biases, runtime = trainDigitPerceptron(dImages, dLabels, trainingSize)
+			testDigitPerceptron(dTestImages, weights, biases, dTestLabels, trainingSize, runtime)
 
 
 
