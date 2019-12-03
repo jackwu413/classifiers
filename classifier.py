@@ -216,6 +216,86 @@ def testDigitPerceptron(images, weights, biases, labels, trainingSize, runtime):
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
+def trainFaceNaive(images, labels, trainingSize):
+	start = time.time()
+	faces = 0
+	for label in labels:
+		if label == '1':
+			faces += 1
+	nonfaces = len(labels) - faces
+	priorFace = float(faces)/float(len(labels))
+	priorNotFace = float(nonfaces)/float(len(labels))
+	end = int((float(trainingSize/100.0))*len(images))
+	#load face table with probabilities of features containing pixel 
+	featuresFace = [0] * ((len(images[0]) * len(images[0][0])))
+	for image in images[0:end]: 
+		if(labels[images.index(image)] == '1'):
+			k = 0
+			for i in image:
+				for j in i:
+					if(j != ' '):
+						featuresFace[k] += 1
+					k += 1
+	for l in featuresFace: 
+		if (l != 0):
+			l = float(l)/float(faces)
+		else: 
+			l = float(1)/float(faces)
+
+	#load non face table 
+	featuresNotFace = [0] * ((len(images[0]) * len(images[0][0])))
+	for image in images[0:end]:
+		if(labels[images.index(image)] == '0'):
+			h = 0
+			for n in image:
+				for p in n:
+					if (p != ' '):
+						featuresNotFace[h] += 1
+					h += 1
+	for q in featuresNotFace:
+		if (q != 0):
+			q = float(q)/float(nonfaces)
+		else:
+			q = float(1)/float(nonfaces)
+
+	end = time.time()
+	runtime = end - start 
+	return featuresFace, featuresNotFace, runtime
+
+def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, trainingSize, runtime):
+	correct = 0
+	incorrect = 0
+	for image in images:
+		pFace = evaluateImage(image, featureTableFace)
+		pNotFace = evaluateImage(image, featureTableNotFace)
+		if(pFace >= pNotFace):
+			if(labels[images.index(image)] == '0'):
+				incorrect += 1
+			else:
+				correct += 1
+		else:
+			if(labels[images.index(image)] == '1'):
+				incorrect += 1
+			else:
+				correct += 1
+	percentCorrect = float(correct/float(correct+incorrect))*100
+	percentIncorrect = float(incorrect/float(correct+incorrect))*100
+	print("Training Set Size: " + str(trainingSize) + "%")
+	print("Runtime: " + str(runtime))
+	print("Correct: " + str(percentCorrect) + "%")
+	print("Incorrect: " + str(percentIncorrect) + "%")
+
+def evaluateImage(image, featureTable):
+	val = 1
+	k = 0
+	for j in image:
+		for i in j:
+			if (i != ' '):
+				val *= featureTable[k]
+			else: 
+				val *= (1 - featureTable[k])
+			k += 1
+	return val
 
 
 if __name__ == "__main__":
@@ -252,6 +332,10 @@ if __name__ == "__main__":
 		if(classifier == 'p'):
 			weights, bias, runtime = trainFacePerceptron(fImages, fLabels, trainingSize)
 			testFacePerceptron(fTestImages, weights, bias, fTestLabels, trainingSize, runtime)
+		elif(classifier == 'n'):
+			trainFaceNaive(fImages, fLabels, trainingSize)
+			featureTableFace, featureTableNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
+			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, trainingSize, runtime)	
 	elif(dataType == 'd'):
 		if(classifier == 'p'):
 			weights, biases, runtime = trainDigitPerceptron(dImages, dLabels, trainingSize)
@@ -260,23 +344,6 @@ if __name__ == "__main__":
 
 
 	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
