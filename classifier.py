@@ -94,11 +94,11 @@ def trainFacePerceptron(images, labels, trainingSize):
 	start = time.time()
 	weights = [0] * ((len(images[0]) * len(images[0][0])))
 	bias = 0
-	end = int((float(trainingSize/100.0))*len(images))
+	last = int((float(trainingSize/100.0))*len(images))
 	wchange = True
 	while wchange:
 		wchange = False 
-		for image in images[0:end]:
+		for image in images[0:last]:
 			#Function to return f(x) for each image
 			val = trainOnImage(image, weights, bias)
 			if ((val >= 0) and (labels[images.index(image)] == '0')):
@@ -122,11 +122,11 @@ def trainDigitPerceptron(images, labels, trainingSize):
 		i += 1
 	#Initialize bias set
 	biasSet = [0] * 10
-	end = int((float(trainingSize/100.0))*len(images))
+	last = int((float(trainingSize/100.0))*len(images))
 	wchange = True
 	while wchange:
 		wchange = False 
-		for image in images[0:end]:
+		for image in images[0:last]:
 			vals = [0] * 10
 			#Run on all 10 digit perceptrons 
 			j = 0
@@ -217,18 +217,28 @@ def testDigitPerceptron(images, weights, biases, labels, trainingSize, runtime):
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
 def trainFaceNaive(images, labels, trainingSize):
+	#Start timer 
 	start = time.time()
+
+	#Amount of training data to be used 
+	last = int((float(trainingSize/100.0))*len(images))
+
+	#Calculate the prior probabilites by counting number of images that are labeled as face/not face and diving by total number of images 
 	faces = 0
 	for label in labels:
 		if label == '1':
 			faces += 1
 	nonfaces = len(labels) - faces
+
 	priorFace = float(faces)/float(len(labels))
 	priorNotFace = float(nonfaces)/float(len(labels))
-	end = int((float(trainingSize/100.0))*len(images))
-	#load face table with probabilities of features containing pixel 
+
+	#load face/nonface tables with probabilities of features containing pixel 
 	featuresFace = [0] * ((len(images[0]) * len(images[0][0])))
-	for image in images[0:end]: 
+	featuresNotFace = [0] * ((len(images[0]) * len(images[0][0])))
+
+	for image in images[0:last]: 
+		# Training image that is labeled as face 
 		if(labels[images.index(image)] == '1'):
 			k = 0
 			for i in image:
@@ -236,31 +246,50 @@ def trainFaceNaive(images, labels, trainingSize):
 					if(j != ' '):
 						featuresFace[k] += 1
 					k += 1
-	for l in featuresFace: 
-		if (l != 0):
-			l = float(l)/float(faces)
+		#Training image that is labeled as not face
 		else: 
-			l = float(1)/float(faces)
-
-	#load non face table 
-	featuresNotFace = [0] * ((len(images[0]) * len(images[0][0])))
-	for image in images[0:end]:
-		if(labels[images.index(image)] == '0'):
 			h = 0
 			for n in image:
 				for p in n:
 					if (p != ' '):
 						featuresNotFace[h] += 1
 					h += 1
-	for q in featuresNotFace:
-		if (q != 0):
-			q = float(q)/float(nonfaces)
-		else:
-			q = float(1)/float(nonfaces)
-
+	featuresFace, featuresNotFace = convertPercent(featuresFace, featuresNotFace, faces, nonfaces)
+	# for index, l in featuresFace: 
+	# 	if (l != 0):
+	# 		#l = float(l)/float(faces)
+	# 		featuresFace[index] = float(l)/float(faces)
+	# 	else: 
+	# 		#l = float(0.001)
+	# 		featuresFace[index] = .001
+	# for index2, q in featuresNotFace:
+	# 	if (q != 0):
+	# 		#q = float(q)/float(nonfaces)
+	# 		featuresNotFace[index2] =float(q)/float(nonfaces) 
+	# 	else:
+	# 		#q = float(0.001)
+	# 		featuresNotFace[index2] = .001
+	print(featuresFace)
+	print(featuresNotFace)
 	end = time.time()
 	runtime = end - start 
 	return featuresFace, featuresNotFace, runtime
+
+def convertPercent(table1, table2, faces, nonfaces):
+	[float(i) for i in table1]
+	[float(i) for i in table2]
+
+	j = 0
+	k = 0
+
+	while j < len(table1):
+		table1[j] = float(table1[j])/float(faces)
+		j += 1
+	while k < len(table2):
+		table2[k] = float(table2[k])/float(nonfaces)
+		k += 1
+
+	return table1, table2
 
 def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, trainingSize, runtime):
 	correct = 0
@@ -333,7 +362,7 @@ if __name__ == "__main__":
 			weights, bias, runtime = trainFacePerceptron(fImages, fLabels, trainingSize)
 			testFacePerceptron(fTestImages, weights, bias, fTestLabels, trainingSize, runtime)
 		elif(classifier == 'n'):
-			trainFaceNaive(fImages, fLabels, trainingSize)
+			#trainFaceNaive(fImages, fLabels, trainingSize)
 			featureTableFace, featureTableNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
 			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, trainingSize, runtime)	
 	elif(dataType == 'd'):
