@@ -223,7 +223,7 @@ def trainFaceNaive(images, labels, trainingSize):
 	#Amount of training data to be used 
 	last = int((float(trainingSize/100.0))*len(images))
 
-	#Calculate the prior probabilites by counting number of images that are labeled as face/not face and diving by total number of images 
+	#Calculate the prior probabilites by counting number of images that are labeled as face/not face and dividing by total number of images 
 	faces = 0
 	for label in labels:
 		if label == '1':
@@ -234,8 +234,8 @@ def trainFaceNaive(images, labels, trainingSize):
 	priorNotFace = float(nonfaces)/float(len(labels))
 
 	#load face/nonface tables with probabilities of features containing pixel 
-	featuresFace = [0.0] * ((len(images[0]) * len(images[0][0])))
-	featuresNotFace = [0.0] * ((len(images[0]) * len(images[0][0])))
+	featuresFace = [0] * ((len(images[0]) * len(images[0][0])))
+	featuresNotFace = [0] * ((len(images[0]) * len(images[0][0])))
 
 	for image in images[0:last]: 
 		# Training image that is labeled as face 
@@ -244,7 +244,7 @@ def trainFaceNaive(images, labels, trainingSize):
 			for i in image:
 				for j in i:
 					if(j != ' '):
-						featuresFace[k] += 1.0
+						featuresFace[k] += 1
 					k += 1
 		#Training image that is labeled as not face
 		else: 
@@ -252,18 +252,18 @@ def trainFaceNaive(images, labels, trainingSize):
 			for n in image:
 				for p in n:
 					if (p != ' '):
-						featuresNotFace[h] += 1.0
+						featuresNotFace[h] += 1
 					h += 1
 
 	for index1 in featuresFace:
 		if index1 != 0.0:
-			index1 = float(float(index1)/float(faces))
+			index1 = float(index1)/float(faces)
 		else:
 			index1 = 0.01
 
 	for index2 in featuresNotFace:
 		if index2 != 0.0:
-			index2 = float(float(index2)/float(nonfaces))
+			index2 = float(index2)/float(nonfaces)
 		else:
 			index2 = 0.01	
 	end = time.time()
