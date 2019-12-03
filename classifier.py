@@ -254,49 +254,32 @@ def trainFaceNaive(images, labels, trainingSize):
 					if (p != ' '):
 						featuresNotFace[h] += 1
 					h += 1
-	featuresFace, featuresNotFace = convertPercent(featuresFace, featuresNotFace, faces, nonfaces)
-	# for index, l in featuresFace: 
-	# 	if (l != 0):
-	# 		#l = float(l)/float(faces)
-	# 		featuresFace[index] = float(l)/float(faces)
-	# 	else: 
-	# 		#l = float(0.001)
-	# 		featuresFace[index] = .001
-	# for index2, q in featuresNotFace:
-	# 	if (q != 0):
-	# 		#q = float(q)/float(nonfaces)
-	# 		featuresNotFace[index2] =float(q)/float(nonfaces) 
-	# 	else:
-	# 		#q = float(0.001)
-	# 		featuresNotFace[index2] = .001
-	print(featuresFace)
-	print(featuresNotFace)
+
+	for index1 in featuresFace:
+		if index1 != 0:
+			index1 = float(float(index1)/float(faces))
+		else:
+			index1 = 0.00001
+
+	for index2 in featuresNotFace:
+		if index2 != 0:
+			index2 = float(float(index2)/float(nonfaces))
+		else:
+			index2 = 0.00001
+
+	# print(featuresFace)
+	# print(featuresNotFace)
 	end = time.time()
 	runtime = end - start 
-	return featuresFace, featuresNotFace, runtime
+	return featuresFace, featuresNotFace, priorFace, priorNotFace, runtime
 
-def convertPercent(table1, table2, faces, nonfaces):
-	[float(i) for i in table1]
-	[float(i) for i in table2]
 
-	j = 0
-	k = 0
-
-	while j < len(table1):
-		table1[j] = float(table1[j])/float(faces)
-		j += 1
-	while k < len(table2):
-		table2[k] = float(table2[k])/float(nonfaces)
-		k += 1
-
-	return table1, table2
-
-def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, trainingSize, runtime):
+def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime):
 	correct = 0
 	incorrect = 0
 	for image in images:
-		pFace = evaluateImage(image, featureTableFace)
-		pNotFace = evaluateImage(image, featureTableNotFace)
+		pFace = evaluateImage(image, featureTableFace, priorFace)
+		pNotFace = evaluateImage(image, featureTableNotFace, priorNotFace)
 		if(pFace >= pNotFace):
 			if(labels[images.index(image)] == '0'):
 				incorrect += 1
@@ -314,7 +297,7 @@ def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, trainin
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
-def evaluateImage(image, featureTable):
+def evaluateImage(image, featureTable, prior):
 	val = 1
 	k = 0
 	for j in image:
@@ -324,7 +307,7 @@ def evaluateImage(image, featureTable):
 			else: 
 				val *= (1 - featureTable[k])
 			k += 1
-	return val
+	return float(val * float(prior))
 
 
 if __name__ == "__main__":
@@ -363,8 +346,8 @@ if __name__ == "__main__":
 			testFacePerceptron(fTestImages, weights, bias, fTestLabels, trainingSize, runtime)
 		elif(classifier == 'n'):
 			#trainFaceNaive(fImages, fLabels, trainingSize)
-			featureTableFace, featureTableNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
-			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, trainingSize, runtime)	
+			featureTableFace, featureTableNotFace, priorFace, priorNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
+			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime)	
 	elif(dataType == 'd'):
 		if(classifier == 'p'):
 			weights, biases, runtime = trainDigitPerceptron(dImages, dLabels, trainingSize)
