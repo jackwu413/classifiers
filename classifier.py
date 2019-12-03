@@ -234,8 +234,8 @@ def trainFaceNaive(images, labels, trainingSize):
 	priorNotFace = float(nonfaces)/float(len(labels))
 
 	#load face/nonface tables with probabilities of features containing pixel 
-	featuresFace = [0] * ((len(images[0]) * len(images[0][0])))
-	featuresNotFace = [0] * ((len(images[0]) * len(images[0][0])))
+	featuresFace = [0.0] * ((len(images[0]) * len(images[0][0])))
+	featuresNotFace = [0.0] * ((len(images[0]) * len(images[0][0])))
 
 	for image in images[0:last]: 
 		# Training image that is labeled as face 
@@ -244,7 +244,7 @@ def trainFaceNaive(images, labels, trainingSize):
 			for i in image:
 				for j in i:
 					if(j != ' '):
-						featuresFace[k] += 1
+						featuresFace[k] += 1.0
 					k += 1
 		#Training image that is labeled as not face
 		else: 
@@ -252,23 +252,20 @@ def trainFaceNaive(images, labels, trainingSize):
 			for n in image:
 				for p in n:
 					if (p != ' '):
-						featuresNotFace[h] += 1
+						featuresNotFace[h] += 1.0
 					h += 1
 
 	for index1 in featuresFace:
-		if index1 != 0:
+		if index1 != 0.0:
 			index1 = float(float(index1)/float(faces))
 		else:
-			index1 = 0.00001
+			index1 = 0.01
 
 	for index2 in featuresNotFace:
-		if index2 != 0:
+		if index2 != 0.0:
 			index2 = float(float(index2)/float(nonfaces))
 		else:
-			index2 = 0.00001
-
-	# print(featuresFace)
-	# print(featuresNotFace)
+			index2 = 0.01	
 	end = time.time()
 	runtime = end - start 
 	return featuresFace, featuresNotFace, priorFace, priorNotFace, runtime
@@ -280,6 +277,7 @@ def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, priorFa
 	for image in images:
 		pFace = evaluateImage(image, featureTableFace, priorFace)
 		pNotFace = evaluateImage(image, featureTableNotFace, priorNotFace)
+
 		if(pFace >= pNotFace):
 			if(labels[images.index(image)] == '0'):
 				incorrect += 1
@@ -303,11 +301,12 @@ def evaluateImage(image, featureTable, prior):
 	for j in image:
 		for i in j:
 			if (i != ' '):
-				val *= featureTable[k]
+				val = val * featureTable[k]
 			else: 
-				val *= (1 - featureTable[k])
+				val = val * (1 - featureTable[k])
 			k += 1
-	return float(val * float(prior))
+	# print(str(prior))
+	return float(val * prior)
 
 
 if __name__ == "__main__":
