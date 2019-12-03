@@ -195,7 +195,6 @@ def testFacePerceptron(images, weights, bias, labels, trainingSize, runtime):
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
-
 def testDigitPerceptron(images, weights, biases, labels, trainingSize, runtime):
 	correct = 0
 	incorrect = 0
