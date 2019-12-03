@@ -234,8 +234,8 @@ def trainFaceNaive(images, labels, trainingSize):
 	priorNotFace = float(nonfaces)/float(len(labels))
 
 	#load face/nonface tables with probabilities of features containing pixel 
-	featuresFace = [0] * ((len(images[0]) * len(images[0][0])))
-	featuresNotFace = [0] * ((len(images[0]) * len(images[0][0])))
+	featuresFace = [0.0] * ((len(images[0]) * len(images[0][0])))
+	featuresNotFace = [0.0] * ((len(images[0]) * len(images[0][0])))
 
 	for image in images[0:last]: 
 		# Training image that is labeled as face 
@@ -244,7 +244,7 @@ def trainFaceNaive(images, labels, trainingSize):
 			for i in image:
 				for j in i:
 					if(j != ' '):
-						featuresFace[k] += 1
+						featuresFace[k] += 1.0
 					k += 1
 		#Training image that is labeled as not face
 		else: 
@@ -252,38 +252,40 @@ def trainFaceNaive(images, labels, trainingSize):
 			for n in image:
 				for p in n:
 					if (p != ' '):
-						featuresNotFace[h] += 1
+						featuresNotFace[h] += 1.0
 					h += 1
 
-	for index1 in featuresFace:
-		if index1 != 0.0:
-			index1 = float(index1)/float(faces)
+	for index1 in range(len(featuresFace)):
+		if featuresFace[index1] > 0.0:
+			featuresFace[index1] = float(featuresFace[index1])/float(faces)
 		else:
-			index1 = 0.01
+			featuresFace[index1] = 0.0001
 
-	for index2 in featuresNotFace:
-		if index2 != 0.0:
-			index2 = float(index2)/float(nonfaces)
+	for index2 in range(len(featuresNotFace)):
+		if featuresNotFace[index2] > 0.0:
+			featuresNotFace[index2] = float(featuresNotFace[index2])/float(nonfaces)
 		else:
-			index2 = 0.01	
+			featuresNotFace[index2] = 0.0001
+
 	end = time.time()
 	runtime = end - start 
 	return featuresFace, featuresNotFace, priorFace, priorNotFace, runtime
-
 
 def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime):
 	correct = 0
 	incorrect = 0
 	for image in images:
-		pFace = evaluateImage(image, featureTableFace, priorFace)
-		pNotFace = evaluateImage(image, featureTableNotFace, priorNotFace)
+		pFace, decimalShift1 = evaluateImage(image, featureTableFace, priorFace)
+		pNotFace, decimalShift2 = evaluateImage(image, featureTableNotFace, priorNotFace)
 
-		if(pFace >= pNotFace):
+		difference = decimalShift1 - decimalShift2
+
+		if((difference == 0 and pFace >= pNotFace) or difference < 0):
 			if(labels[images.index(image)] == '0'):
 				incorrect += 1
 			else:
 				correct += 1
-		else:
+		elif((difference == 0 and pFace < pNotFace) or difference > 0):
 			if(labels[images.index(image)] == '1'):
 				incorrect += 1
 			else:
@@ -295,18 +297,131 @@ def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, priorFa
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
+def trainDigitNaive(images, labels, traingSize):
+	start = time.time()
+
+	#Amount of training data to be used 
+	last = int((float(trainingSize/100.0))*len(images))
+
+	#Calculate priors
+	priors = [0] * 10
+	for label in labels:
+		priors[int(label)] += 1
+	for p in range(len(priors)):
+		priors[p] = float(priors[p])/float(len(labels)) 
+	#Done calculating priors 
+
+	#Load digit table with probabilities of features containing pixel 
+	featureTables = []
+	l = 0
+	while l < 10:
+		table = [0.0] * ((len(images[0]) * len(images[0][0])))
+		featureTables.append(table)
+		l += 1
+
+	for image in images: 
+		currLabel = int(labels[images.index(image)])
+		k = 0
+		for i in image:
+			for j in i:
+				if(j != ' '):
+					featureTables[currLabel][k] += 1.0
+				k += 1
+
+	for i in range(len(featureTables)):
+		currTable = featureTables[i]
+		for j in range(len(currTable)):
+			index = 0
+			numCurrLabels = float(priors[index]*len(labels))
+			if currTable[j] > 0.0:
+				currTable[j] = float(currTable[j])/numCurrLabels
+			else:
+				currTable[j] = 0.0001
+
+			index+=1
+	end = time.time()
+	runtime = end - start
+	return featureTables, priors, runtime
+
+def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
+	correct = 0
+	incorrect = 0
+	for image in images:
+		pDigits, decimalShifts = getDigitsProbs(image, tables, priors)
+		#Get mac decimal shift 
+		prediction = decimalShifts.index(max(decimalShifts))
+
+		#Check if there's more than one decimal shift
+		duplicates = []
+		count = 0
+		for i in range(len(decimalShifts)):
+			if decimalShifts[i] == decimalShifts[prediction]:
+				count += 1
+				duplicates.append(i)
+
+		#If there are more than 1 decimal shift max values 
+		if count > 1:
+			#Get the max of pDigits out of the indexes in duplicates 
+			tempMax = 0
+			for j in range(len(pDigits)): 
+				if j in duplicates: 
+					if pDigits[j] > tempMax:
+						tempMax = pDigits[j]
+			prediction = tempMax
+
+		if labels[images.index(image)] == str(prediction):
+			correct += 1
+		else:
+			incorrect += 1
+
+	percentCorrect = float(correct/float(correct+incorrect))*100
+	percentIncorrect = float(incorrect/float(correct+incorrect))*100
+	print("Training Set Size: " + str(trainingSize) + "%")
+	print("Runtime: " + str(runtime))
+	print("Correct: " + str(percentCorrect) + "%")
+	print("Incorrect: " + str(percentIncorrect) + "%")
+
+def getDigitsProbs(image, tables, priors):
+	vals = [1] * 10
+	k = 0
+	decimalShifts = [0] * 10
+	for j in image:
+		for i in j:
+			if (i != ' '):
+				for x in range(len(vals)):
+					vals[x] = vals[x] * tables[x][k]
+					if (vals[x] < 0.1):
+						vals[x] = vals[x] * 10
+						decimalShifts[x] += 1
+			else:
+				for y in range(len(vals)):
+					vals[y] = vals[y] * (1 - tables[y][k])
+					if (vals[y] < 0.1):
+						vals[y] = vals[y] * 10
+						decimalShifts[y] += 1
+			k += 1
+	for n in range(len(vals)):
+		vals[n] = vals[n] * priors[n]
+
+	return vals, decimalShifts	
+
 def evaluateImage(image, featureTable, prior):
 	val = 1
 	k = 0
+	decimalShift = 0
 	for j in image:
 		for i in j:
 			if (i != ' '):
 				val = val * featureTable[k]
-			else: 
+			else:
 				val = val * (1 - featureTable[k])
-			k += 1
-	# print(str(prior))
-	return float(val * prior)
+			k += 1	
+
+			if(val < 0.1):
+				val = val * 10
+				decimalShift += 1
+
+	return (val * prior),decimalShift
 
 
 if __name__ == "__main__":
@@ -344,13 +459,15 @@ if __name__ == "__main__":
 			weights, bias, runtime = trainFacePerceptron(fImages, fLabels, trainingSize)
 			testFacePerceptron(fTestImages, weights, bias, fTestLabels, trainingSize, runtime)
 		elif(classifier == 'n'):
-			#trainFaceNaive(fImages, fLabels, trainingSize)
 			featureTableFace, featureTableNotFace, priorFace, priorNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
 			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime)	
 	elif(dataType == 'd'):
 		if(classifier == 'p'):
 			weights, biases, runtime = trainDigitPerceptron(dImages, dLabels, trainingSize)
 			testDigitPerceptron(dTestImages, weights, biases, dTestLabels, trainingSize, runtime)
+		elif(classifier == 'n'):
+			featureTables, priors, runtime = trainDigitNaive(dImages, dLabels, trainingSize)
+			testDigitNaive(dTestImages, dTestLabels, featureTables, priors, trainingSize, runtime)
 
 
 
