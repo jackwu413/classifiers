@@ -444,6 +444,41 @@ def evaluateImage(image, featureTable, prior):
 
 	return (val * prior),decimalShift
 
+def trainImportance(images, labels, trainingSize):
+	start = time.time()
+
+	#Initialize tables to be returned, one for face, one for not face 
+	faceTable = [0] * ((len(images[0]) * len(images[0][0])))
+	notFaceTable = [0] * ((len(images[0]) * len(images[0][0])))
+
+	#Amount of training data to be used 
+	last = int((float(trainingSize/100.0))*len(images))
+
+	for image in images: 
+		k = 0
+		if labels[images.index(images)] == '1':
+			for i in image:
+				for j in i:
+					if j != ' ':
+						faceTable[k] += 1
+					k += 1
+		else:
+			for i in image:
+				for j in i:
+					if j != ' ':
+						notFaceTable[k] += 1
+					k += 1
+
+	# print(faceTable)
+	# print(notFaceTable)
+	return
+
+
+	end = time.time()
+	runtime = end - start 
+	return runtime
+
+
 
 if __name__ == "__main__":
 
@@ -462,8 +497,8 @@ if __name__ == "__main__":
 			break 
 
 	while True:
-		classifier = raw_input("Enter P for Perceptron or N for Naive Bayes.\n")
-		if(classifier != 'p' and classifier != 'n'):
+		classifier = raw_input("Enter P for Perceptron, N for Naive Bayes, or I for Important Pixel Classifier.\n")
+		if(classifier != 'p' and classifier != 'n' and classifier != 'i'):
 			print("Improper input Try again.\n")
 		else: 
 			break
@@ -481,7 +516,10 @@ if __name__ == "__main__":
 			testFacePerceptron(fTestImages, weights, bias, fTestLabels, trainingSize, runtime)
 		elif(classifier == 'n'):
 			featureTableFace, featureTableNotFace, priorFace, priorNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
-			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime)	
+			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime)
+		else:
+			trainImportance(fImages, fLabels, trainingSize)
+			#importanceTableFace, importanceTableNotFace, runtime = trainImportance(fImages, fLabels, trainingSize)	
 	elif(dataType == 'd'):
 		if(classifier == 'p'):
 			weights, biases, runtime = trainDigitPerceptron(dImages, dLabels, trainingSize)
