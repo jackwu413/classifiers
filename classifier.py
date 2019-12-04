@@ -500,7 +500,6 @@ def trainFaceMajority(images, labels, trainingSize):
 	runtime = end - start 
 	return majorityFace, majorityNotFace, runtime
 
-#Not done
 def testFaceMajority(images, labels, faceTable, notFaceTable, trainingSize, runtime):
 	correct = 0
 	incorrect = 0
@@ -537,6 +536,83 @@ def getScore(image, table):
 			k += 1
 	return score
 
+def trainDigitMajority(images, labels, trainingSize):
+	start = time.time()
+
+	#Initialize digit pixel tables 
+	digitTablesFilled = []
+	l = 0
+	while l < 10:
+		tempTable = [0] * ((len(images[0]) * len(images[0][0])))
+		digitTablesFilled.append(tempTable)
+		l += 1
+
+	#Count the frequency of each digit 
+	digitCounts = [0] * 10 
+
+	#Amount of training data to be used 
+	last = int((float(trainingSize/100.0))*len(images))
+
+	#Populate table to record frequency of filled pixels per digit 
+	for image in images[0:last]:
+		currLabel = int(labels[images.index(image)])
+		k = 0
+		digitCounts[currLabel] += 1
+		for i in image:
+			for j in i: 
+				if j != ' ':
+					digitTablesFilled[currLabel][k] += 1
+				k += 1
+
+	#Initialize majority tables 
+	majorityTables = []
+	m = 0
+	while m < 10:
+		tempTable = [0] * ((len(images[0]) * len(images[0][0])))
+		majorityTables.append(tempTable)
+		m += 1
+
+
+	#Use the digit pixels tables to populate the majority tables 
+	#Iterate through tables (use n to iterate)
+	for n in range(len(digitTablesFilled)):
+		currentDigitTable = digitTablesFilled[n]
+		for t in range(len(currentDigitTable)):
+			if currentDigitTable[t] >= digitCounts[n]*0.2:
+				majorityTables[n][t] = 1
+			else:
+				majorityTables[n][t] = 1
+
+
+
+	end = time.time()
+	runtime = end - start 
+	return majorityTables, runtime 
+
+def testDigitMajority(images, labels, majorities, trainingSize, runtime):
+	correct = 0
+	incorrect = 0
+
+	#Score each image against the importance table for face and not face. The higher score is the label we predict 
+	for image in images: 
+		#Score current image against each digit's majority table and pick the highest score 
+		scores = [0] * 10
+		for d in range(len(scores)):
+			scores[d] = getScore(image, majorities[d])
+		
+		prediction = scores.index(max(scores)) 
+
+		if(labels[images.index(image)] == str(prediction)):
+			correct += 1
+		else:
+			incorrect +=1
+
+	percentCorrect = float(correct/float(correct+incorrect))*100
+	percentIncorrect = float(incorrect/float(correct+incorrect))*100
+	print("Training Set Size: " + str(trainingSize) + "%")
+	print("Runtime: " + str(runtime))
+	print("Correct: " + str(percentCorrect) + "%")
+	print("Incorrect: " + str(percentIncorrect) + "%")
 
 
 if __name__ == "__main__":
@@ -577,7 +653,6 @@ if __name__ == "__main__":
 			featureTableFace, featureTableNotFace, priorFace, priorNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
 			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime)
 		else:
-			#trainFaceMajority(fImages, fLabels, trainingSize)
 			majorityFace, majorityNotFace, runtime = trainFaceMajority(fImages, fLabels, trainingSize)	
 			testFaceMajority(fTestImages, fTestLabels, majorityFace, majorityNotFace, trainingSize, runtime)
 	elif(dataType == 'd'):
@@ -587,6 +662,9 @@ if __name__ == "__main__":
 		elif(classifier == 'n'):
 			featureTables, priors, runtime = trainDigitNaive(dImages, dLabels, trainingSize)
 			testDigitNaive(dTestImages, dTestLabels, featureTables, priors, trainingSize, runtime)
+		else: 
+			majorities, runtime = trainDigitMajority(dImages, dLabels, trainingSize)
+			testDigitMajority(dTestImages, dTestLabels, majorities, trainingSize, runtime)
 
 
 
