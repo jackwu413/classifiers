@@ -341,6 +341,7 @@ def trainDigitNaive(images, labels, traingSize):
 			index+=1
 	end = time.time()
 	runtime = end - start
+	#print("First table: " + str(featureTables[0]))
 	return featureTables, priors, runtime
 
 def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
@@ -367,8 +368,10 @@ def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
 			tempMax = 0
 			for j in range(len(pDigits)): 
 				if j in duplicates: 
-
+					if(pDigits[j] < 0 ):
+						print("NEGATIVE-PRIORITY:", pDigits[j])
 					if pDigits[j] > tempMax:
+
 						tempMax = pDigits[j]
 						flag = 1
 			if(flag == 1):			
@@ -404,13 +407,15 @@ def getDigitsProbs(image, tables, priors):
 						decimalShifts[x] += 1
 			else:
 				for y in range(len(vals)):
+					if( tables[y][k] < 0):
+						print("NEGATIVE-TABLE[y][k]: ", tables[y][k])
 					vals[y] = vals[y] * (1 - tables[y][k])
 					if (vals[y] < 0.1):
 						vals[y] = vals[y] * 10
 						decimalShifts[y] += 1
 			k += 1
 	for n in range(len(vals)):
-		
+
 		vals[n] = vals[n] * priors[n]
 
 	return vals, decimalShifts	
