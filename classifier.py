@@ -348,7 +348,8 @@ def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
 	incorrect = 0
 	for image in images:
 		pDigits, decimalShifts = getDigitsProbs(image, tables, priors)
-		#Get mac decimal shift 
+		
+		#Get max decimal shift 
 		prediction = decimalShifts.index(max(decimalShifts))
 
 		#Check if there's more than one decimal shift
@@ -360,22 +361,30 @@ def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
 				duplicates.append(i)
 
 		#If there are more than 1 decimal shift max values 
+		flag = -1
 		if count > 1:
 			#Get the max of pDigits out of the indexes in duplicates 
 			tempMax = 0
 			for j in range(len(pDigits)): 
 				if j in duplicates: 
+
 					if pDigits[j] > tempMax:
 						tempMax = pDigits[j]
-			prediction = tempMax
+						flag = 1
+			if(flag == 1):			
+				prediction = tempMax
 
+		
 		if labels[images.index(image)] == str(prediction):
+			#print("imagelabel:", labels[images.index(image)])
+			#print("prediction:", str(prediction))
 			correct += 1
 		else:
 			incorrect += 1
 
 	percentCorrect = float(correct/float(correct+incorrect))*100
 	percentIncorrect = float(incorrect/float(correct+incorrect))*100
+	
 	print("Training Set Size: " + str(trainingSize) + "%")
 	print("Runtime: " + str(runtime))
 	print("Correct: " + str(percentCorrect) + "%")
@@ -401,6 +410,7 @@ def getDigitsProbs(image, tables, priors):
 						decimalShifts[y] += 1
 			k += 1
 	for n in range(len(vals)):
+		
 		vals[n] = vals[n] * priors[n]
 
 	return vals, decimalShifts	
