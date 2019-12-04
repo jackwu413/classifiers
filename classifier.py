@@ -454,23 +454,61 @@ def trainImportance(images, labels, trainingSize):
 	#Amount of training data to be used 
 	last = int((float(trainingSize/100.0))*len(images))
 
+
+	#Count of each type of image
+	faceCount = 0
+	notFaceCount = 0
+
 	for image in images: 
 		k = 0
-		if labels[images.index(images)] == '1':
+		if labels[images.index(image)] == '1':
+			faceCount += 1
 			for i in image:
 				for j in i:
 					if j != ' ':
 						faceTable[k] += 1
 					k += 1
 		else:
+			notFaceCount += 1
 			for i in image:
 				for j in i:
 					if j != ' ':
 						notFaceTable[k] += 1
 					k += 1
 
-	# print(faceTable)
-	# print(notFaceTable)
+
+	print(faceTable)
+	print(notFaceTable)
+
+
+	print("faceCount: " + str(faceCount))
+	print("notFaceCount: " + str(notFaceCount))
+
+	#Threshold that determines a pixel's "importance"
+	percentRequired = 0.15
+	faceThreshold = percentRequired * faceCount
+	notFaceThreshold = percentRequired * notFaceCount
+
+	print("faceThreshold: " + str(faceThreshold))
+	print("notFaceThreshold: " + str(notFaceThreshold))
+
+	#If a pixel is common between more than 70% of face images, it is marked as 1, otherwise 0 
+	for m in range(len(faceTable)):
+		if faceTable[m] < faceThreshold:
+			faceTable[m] = 0
+		else:
+			faceTable[m] = 1
+
+	#Do the same thing for non faces 
+	for n in range(len(notFaceTable)):
+		if notFaceTable[n] < notFaceThreshold:
+			notFaceTable[n] = 0
+		else: 
+			notFaceTable[n] = 1
+
+
+	print(faceTable)
+	print(notFaceTable)
 	return
 
 
