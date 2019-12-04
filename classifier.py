@@ -297,7 +297,7 @@ def testFaceNaive(images, labels, featureTableFace, featureTableNotFace, priorFa
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
-def trainDigitNaive(images, labels, traingSize):
+def trainDigitNaive(images, labels, trainingSize):
 	start = time.time()
 
 	#Amount of training data to be used 
@@ -305,10 +305,10 @@ def trainDigitNaive(images, labels, traingSize):
 
 	#Calculate priors
 	priors = [0] * 10
-	for label in labels:
+	for label in labels[0:last]:
 		priors[int(label)] += 1
 	for p in range(len(priors)):
-		priors[p] = float(priors[p])/float(len(labels)) 
+		priors[p] = float(priors[p])/float(last) 
 	#Done calculating priors 
 
 	#Load digit table with probabilities of features containing pixel 
@@ -319,7 +319,7 @@ def trainDigitNaive(images, labels, traingSize):
 		featureTables.append(table)
 		l += 1
 
-	for image in images: 
+	for image in images[0:last]: 
 		currLabel = int(labels[images.index(image)])
 		k = 0
 		for i in image:
@@ -327,21 +327,25 @@ def trainDigitNaive(images, labels, traingSize):
 				if(j != ' '):
 					featureTables[currLabel][k] += 1.0
 				k += 1
-
+	#index=0
 	for i in range(len(featureTables)):
 		currTable = featureTables[i]
+		#print("I: ", i);
 		for j in range(len(currTable)):
-			index = 0
-			numCurrLabels = float(priors[index]*len(labels))
+			
+			numCurrLabels = float(priors[i]*last)
 			if currTable[j] > 0.0:
 				currTable[j] = float(currTable[j])/numCurrLabels
 			else:
 				currTable[j] = 0.0001
 
-			index+=1
+			#index+=1
+		#index = 0
+
 	end = time.time()
 	runtime = end - start
 	#print("First table: " + str(featureTables[0]))
+	#print("index:"+ str(index))
 	return featureTables, priors, runtime
 
 def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
@@ -350,8 +354,8 @@ def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
 	for image in images:
 		pDigits, decimalShifts = getDigitsProbs(image, tables, priors)
 		
-		#Get max decimal shift 
-		prediction = decimalShifts.index(max(decimalShifts))
+		#Get min decimal shift 
+		prediction = decimalShifts.index(min(decimalShifts))
 
 		#Check if there's more than one decimal shift
 		duplicates = []
@@ -368,10 +372,10 @@ def testDigitNaive(images, labels, tables, priors, trainingSize, runtime):
 			tempMax = 0
 			for j in range(len(pDigits)): 
 				if j in duplicates: 
-					if(pDigits[j] < 0 ):
-						print("NEGATIVE-PRIORITY:", pDigits[j])
+					#if(pDigits[j] < 0 ):
+						#print("NEGATIVE-PRIORITY:", pDigits[j])
 					if pDigits[j] > tempMax:
-
+						#print("INSIDE CHANGE")
 						tempMax = pDigits[j]
 						flag = 1
 			if(flag == 1):			
@@ -401,6 +405,8 @@ def getDigitsProbs(image, tables, priors):
 		for i in j:
 			if (i != ' '):
 				for x in range(len(vals)):
+					if( tables[x][k] < 0):
+						print("NEGATIVE-TABLE[x][k]: ", tables[x][k])
 					vals[x] = vals[x] * tables[x][k]
 					if (vals[x] < 0.1):
 						vals[x] = vals[x] * 10
@@ -408,7 +414,7 @@ def getDigitsProbs(image, tables, priors):
 			else:
 				for y in range(len(vals)):
 					if( tables[y][k] < 0):
-						print("NEGATIVE-TABLE[y][k]: ", tables[y][k])
+						print("GREATER-ONE-TABLE[y][k]: ", tables[y][k])
 					vals[y] = vals[y] * (1 - tables[y][k])
 					if (vals[y] < 0.1):
 						vals[y] = vals[y] * 10
