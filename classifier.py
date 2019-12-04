@@ -444,77 +444,98 @@ def evaluateImage(image, featureTable, prior):
 
 	return (val * prior),decimalShift
 
-def trainImportance(images, labels, trainingSize):
+def trainFaceMajority(images, labels, trainingSize):
 	start = time.time()
 
 	#Initialize tables to be returned, one for face, one for not face 
-	faceTable = [0] * ((len(images[0]) * len(images[0][0])))
-	notFaceTable = [0] * ((len(images[0]) * len(images[0][0])))
-
-	#Amount of training data to be used 
-	last = int((float(trainingSize/100.0))*len(images))
-
+	faceTableFilled = [0] * ((len(images[0]) * len(images[0][0])))
+	notFaceTableFilled = [0] * ((len(images[0]) * len(images[0][0])))
 
 	#Count of each type of image
 	faceCount = 0
 	notFaceCount = 0
 
-	for image in images: 
+	#Amount of training data to be used 
+	last = int((float(trainingSize/100.0))*len(images))
+
+	for image in images[0:last]: 
 		k = 0
 		if labels[images.index(image)] == '1':
 			faceCount += 1
 			for i in image:
 				for j in i:
 					if j != ' ':
-						faceTable[k] += 1
+						faceTableFilled[k] += 1
 					k += 1
 		else:
 			notFaceCount += 1
 			for i in image:
 				for j in i:
 					if j != ' ':
-						notFaceTable[k] += 1
+						notFaceTableFilled[k] += 1
 					k += 1
 
 
-	print(faceTable)
-	print(notFaceTable)
+	#These are the tables we are returning: one for face and one for notFace 
+	majorityFace = [0] * ((len(images[0]) * len(images[0][0])))
+	majorityNotFace = [0] * ((len(images[0]) * len(images[0][0])))
 
-
-	print("faceCount: " + str(faceCount))
-	print("notFaceCount: " + str(notFaceCount))
-
-	#Threshold that determines a pixel's "importance"
-	percentRequired = 0.15
-	faceThreshold = percentRequired * faceCount
-	notFaceThreshold = percentRequired * notFaceCount
-
-	print("faceThreshold: " + str(faceThreshold))
-	print("notFaceThreshold: " + str(notFaceThreshold))
-
-	#If a pixel is common between more than 70% of face images, it is marked as 1, otherwise 0 
-	for m in range(len(faceTable)):
-		if faceTable[m] < faceThreshold:
-			faceTable[m] = 0
+	#Populate the table for face
+	for m in range(len(faceTableFilled)):
+		#THRESHOLD TO BE DETERMINED
+		if faceTableFilled[m] >= faceCount*0.2: 
+			majorityFace[m] = 1
 		else:
-			faceTable[m] = 1
+			majorityFace[m] = 0
 
-	#Do the same thing for non faces 
-	for n in range(len(notFaceTable)):
-		if notFaceTable[n] < notFaceThreshold:
-			notFaceTable[n] = 0
-		else: 
-			notFaceTable[n] = 1
-
-
-	print(faceTable)
-	print(notFaceTable)
-	return
-
+	#Populate table for not face 
+	for n in range(len(notFaceTableFilled)):
+		#THRESHOLD TO BE DETERMINED
+		if notFaceTableFilled[n] >= notFaceCount*0.2:
+			majorityNotFace[n] = 1
+		else:
+			majorityNotFace[n] = 0
 
 	end = time.time()
 	runtime = end - start 
-	return runtime
+	return majorityFace, majorityNotFace, runtime
+
+#Not done
+def testFaceMajority(images, labels, faceTable, notFaceTable, trainingSize, runtime):
+	correct = 0
+	incorrect = 0
+
+	#Score each image against the importance table for face and not face. The higher score is the label we predict 
+	for image in images: 
+		scoreFace = getScore(image, faceTable)
+		scoreNotFace = getScore(image, notFaceTable)
+		if(scoreFace > scoreNotFace):
+			if(labels[images.index(image)] == '1'):
+				correct += 1
+			else:
+				incorrect += 1
+		else:
+			if(labels[images.index(image)] == '0'):
+				correct += 1
+			else:
+				incorrect += 1
+
+	percentCorrect = float(correct/float(correct+incorrect))*100
+	percentIncorrect = float(incorrect/float(correct+incorrect))*100
+	print("Training Set Size: " + str(trainingSize) + "%")
+	print("Runtime: " + str(runtime))
+	print("Correct: " + str(percentCorrect) + "%")
+	print("Incorrect: " + str(percentIncorrect) + "%")
+
+def getScore(image, table):
+	score = 0
+	k = 0
+	for i in image:
+		for j in i:
+			if ((j != ' ' and table[k] == 1) or (j == ' ' and table[k] == 0)):
+				score += 1
+			k += 1
+	return score
 
 
 
@@ -535,8 +556,8 @@ if __name__ == "__main__":
 			break 
 
 	while True:
-		classifier = raw_input("Enter P for Perceptron, N for Naive Bayes, or I for Important Pixel Classifier.\n")
-		if(classifier != 'p' and classifier != 'n' and classifier != 'i'):
+		classifier = raw_input("Enter P for Perceptron, N for Naive Bayes, or M for Majority Models.\n")
+		if(classifier != 'p' and classifier != 'n' and classifier != 'm'):
 			print("Improper input Try again.\n")
 		else: 
 			break
@@ -556,8 +577,9 @@ if __name__ == "__main__":
 			featureTableFace, featureTableNotFace, priorFace, priorNotFace, runtime = trainFaceNaive(fImages, fLabels, trainingSize)
 			testFaceNaive(fTestImages, fTestLabels, featureTableFace, featureTableNotFace, priorFace, priorNotFace, trainingSize, runtime)
 		else:
-			trainImportance(fImages, fLabels, trainingSize)
-			#importanceTableFace, importanceTableNotFace, runtime = trainImportance(fImages, fLabels, trainingSize)	
+			#trainFaceMajority(fImages, fLabels, trainingSize)
+			majorityFace, majorityNotFace, runtime = trainFaceMajority(fImages, fLabels, trainingSize)	
+			testFaceMajority(fTestImages, fTestLabels, majorityFace, majorityNotFace, trainingSize, runtime)
 	elif(dataType == 'd'):
 		if(classifier == 'p'):
 			weights, biases, runtime = trainDigitPerceptron(dImages, dLabels, trainingSize)
