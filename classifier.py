@@ -543,8 +543,8 @@ def trainDigitMajority(images, labels, trainingSize):
 	digitTablesFilled = []
 	l = 0
 	while l < 10:
-		tempTable = [0] * ((len(images[0]) * len(images[0][0])))
-		digitTablesFilled.append(tempTable)
+		temp = [0] * ((len(images[0]) * len(images[0][0])))
+		digitTablesFilled.append(temp)
 		l += 1
 
 	#Count the frequency of each digit 
@@ -568,20 +568,20 @@ def trainDigitMajority(images, labels, trainingSize):
 	majorityTables = []
 	m = 0
 	while m < 10:
-		tempTable = [0] * ((len(images[0]) * len(images[0][0])))
-		majorityTables.append(tempTable)
+		temp2 = [0] * ((len(images[0]) * len(images[0][0])))
+		majorityTables.append(temp2)
 		m += 1
 
 
 	#Use the digit pixels tables to populate the majority tables 
 	#Iterate through tables (use n to iterate)
-	for n in range(len(digitTablesFilled)):
-		currentDigitTable = digitTablesFilled[n]
-		for t in range(len(currentDigitTable)):
-			if currentDigitTable[t] >= digitCounts[n]*0.2:
+	for n in range(len(digitTablesFilled)): # n goes from 0 to 9 
+		currentDigitTable = digitTablesFilled[n] # the current digit's FilledTable that we're using 
+		for t in range(len(currentDigitTable)): # every item in the current digit's filled table 
+			if currentDigitTable[t] >= digitCounts[n]*0.5:
 				majorityTables[n][t] = 1
 			else:
-				majorityTables[n][t] = 1
+				majorityTables[n][t] = 0
 
 
 
@@ -613,7 +613,6 @@ def testDigitMajority(images, labels, majorities, trainingSize, runtime):
 	print("Runtime: " + str(runtime))
 	print("Correct: " + str(percentCorrect) + "%")
 	print("Incorrect: " + str(percentIncorrect) + "%")
-
 
 if __name__ == "__main__":
 
