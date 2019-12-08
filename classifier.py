@@ -1,5 +1,8 @@
 import time 
 import sys
+import numpy
+import random 
+from random import sample 
 
 def loadTrainingData():
 	#load face training images into array 
@@ -622,6 +625,7 @@ def testDigitMajority(images, labels, majorities, trainingSize, runtime, numimpp
 	print("Incorrect: " + str(percentIncorrect) + "%")
 
 
+
 if __name__ == "__main__":
 
 	#Load training images and labels into arrays 
@@ -672,7 +676,6 @@ if __name__ == "__main__":
 		else: 
 			majorities, runtime , numimppx = trainDigitMajority(dImages, dLabels, trainingSize)
 			testDigitMajority(dTestImages, dTestLabels, majorities, trainingSize, runtime, numimppx)
-
 
 
 
